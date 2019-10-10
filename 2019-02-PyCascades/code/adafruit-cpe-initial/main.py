@@ -1,94 +1,83 @@
+# This is forked version of the original demo optimized for the VS Code Circuit Playground Express add-in
+
 import time
 import random
-import microcontroller
 from adafruit_circuitplayground.express import cpx
 
-
-# This is a special command that will cause a single-press RESET to go
-# into bootloader more (instead of double-click) to make it easier for
-# MakeCode-rs who don't intend to use CircuitPython!
-microcontroller.on_next_reset(microcontroller.RunMode.BOOTLOADER)
-
-# Set this to True to turn on the capacitive touch tones
-TOUCH_PIANO = False
+# Set this to False to turn on off the capacitive touch tones
+TOUCH_PIANO = True
 
 # NeoPixel color names
 WHITE = (50, 50, 50)
+DARKORANGE = (80, 44, 0)
+ORANGE = (244, 117, 33)
+YELLOWORANGE = (216, 59, 1)
 OFF   = (0,   0,  0)
 
-# Not too bright!
+# Dim the lights a bit, they're bright
 cpx.pixels.brightness = 0.3
 
+#Play startup noise on boot
+cpx.play_file("Fanfare.wav")
+
 def wheel(pos):
-    # Input a value 0 to 255 to get a color value.
-    # The colours are a transition r - g - b - back to r.
+    # Return color value for position
     if (pos < 0) or (pos > 255):
         return (0, 0, 0)
     if pos < 85:
-        return (int(255 - pos*3), int(pos*3), 0)
+        return (ORANGE)
     elif pos < 170:
         pos -= 85
-        return (0, int(255 - (pos*3)), int(pos*3))
+        return (YELLOWORANGE)
     else:
         pos -= 170
-    return (int(pos*3), 0, int(255 - pos*3))
+    return (WHITE)
 
-cpx.play_file("Coin.wav")   # Play a coin sound on boot
 
-# Set up the accelerometer to detect tapping
-cpx.detect_taps = 1    # detect single tap only
-
-# Our counter for all 10 pixels
+#Lights on or off
+lights_on = True
+#LED on or off
+led_on = False
+# Counter for all 10 pixels
 pixeln = 0
-# We can tell the switch changed
+# Can tell the switch changed
 last_switch = cpx.switch
 
+
 while True:
-    cpx.red_led = True                  # Turns the little LED next to USB on
+#LIGHTS
+# This  makes a swirling pattern of orange colors!
+    if lights_on:
+        for p in range(10):
+            color = wheel(25 * ((pixeln + p)%10))
+            cpx.pixels[p] = [int(c * ( (10 - (pixeln+p)%10)) / 10.0) for c in color]
 
-    if cpx.tapped:     # Look for a single tap
-        if random.randint(0, 1) == 0:   # Play one of two sounds...
-            cpx.play_file("Coin.wav")
-        else:
-            cpx.play_file("Wild Eep.wav")
+        # Each time 'round we tick off one pixel at a time
+        if cpx.switch:      # depending on the switch we'll go clockwise
+            pixeln += 1
+            if pixeln > 9:
+                pixeln = 0
+        else:               # or counter clockwise, flip the switch to change direction
+            pixeln -= 1
+            if pixeln < 0:
+                pixeln = 9
 
-    # This math makes a 'comet' of swirling rainbow colors!
-    for p in range(10):
-        color = wheel(25 * ((pixeln + p)%10))
-        cpx.pixels[p] = [int(c * ( (10 - (pixeln+p)%10)) / 10.0) for c in color]
+        #BUTTONS
+        # Press and hold to make the lights dimmer or brighter
+        # Dimmer
+        if cpx.button_a:
+            print("Button A pressed")
+            cpx.pixels.brightness = 0.1
+        # Brighter!
+        if cpx.button_b:
+            print("Button B pressed")
+            cpx.pixels.brightness = 0.5
+        # Neither buttons pressed
+        if not cpx.button_a and not cpx.button_b:
+            cpx.pixels.brightness = 0.3
 
-    cpx.red_led = False    # turn off the LED
-
-    # Each time 'round we tick off one pixel at a time
-    if cpx.switch:      # depending on the switch we'll go clockwise
-        pixeln += 1
-        if pixeln > 9:
-            pixeln = 0
-    else:               # or counter clockwise
-        pixeln -= 1
-        if pixeln < 0:
-            pixeln = 9
-
-    if pixeln == 0:   # Every time we go around, print sensor data
-        print("Temperature: %0.1f *C" % cpx.temperature)
-        print("Light Level: %d" % cpx.light)
-        x, y, z = cpx.acceleration
-        print("Accelerometer: (%0.1f, %0.1f, %0.1f) m/s^2" % (x, y, z))
-        print('-' * 40)
-
-    # Depending on the buttons, make it dimmer
-    if cpx.button_a:
-        print("Button A pressed")
-        cpx.pixels.brightness = 0.1
-    # or brighter!
-    if cpx.button_b:
-        print("Button B pressed")
-        cpx.pixels.brightness = 0.5
-    # neither buttons pressed
-    if not cpx.button_a and not cpx.button_b:
-        cpx.pixels.brightness = 0.3
-
-    # Check the switch
+#SWITCH
+    # Check the switch 
     if cpx.switch:
         if last_switch != cpx.switch: # if it moved, print it out
             print("Switch moved left")
@@ -97,22 +86,41 @@ while True:
             print("Switch moved right")
     last_switch = cpx.switch
 
+
+#CAPACITIVE TOUCH
+#Touch A1 - A7 on the device to play music
     if TOUCH_PIANO:
-        if cpx.touch_A4:              #  If we set to play tones
-            cpx.start_tone(524)
+        if cpx.touch_A4:              
+            cpx.play_tone(524, .25)
         elif cpx.touch_A5:
-            cpx.start_tone(588)
+            cpx.play_tone(588, .25)
         elif cpx.touch_A6:
-            cpx.start_tone(660)
+            cpx.play_tone(660, .25)
         elif cpx.touch_A7:
-            cpx.start_tone(698)
+            cpx.play_tone(698, .25)
         elif cpx.touch_A1:
-            cpx.start_tone(784)
+            cpx.play_tone(784, .25)
         elif cpx.touch_A2:
-            cpx.start_tone(880)
+            cpx.play_tone(784, .25)
         elif cpx.touch_A3:
-            cpx.start_tone(988)
-        else:
-            cpx.stop_tone()           # nothing touched? turn off the audio
+            cpx.play_tone(988, .25)
+
+#SENSORS
+#When the device is running use the command "Device Simulator Express: Open Serial Monitor" to get read outs from the device
+    if pixeln == 0:   # Pprint sensor data every time the lights go around
+        print("Temperature: %0.1f *C" % cpx.temperature)
+        print("Light Level: %d" % cpx.light)
+        x, y, z = cpx.acceleration
+        print("Accelerometer: (%0.1f, %0.1f, %0.1f) m/s^2" % (x, y, z))
+        print('-' * 40)
+
+#SHAKE
+    if cpx.shake(shake_threshold=20):     # Look for a shake
+        cpx.pixels.fill(OFF)              # Turn off lights and pause sensor reporting
+        lights_on = not lights_on         # Switch light bool
+        led_on = not led_on               # Switch LED bool
+
+#LED
+    cpx.red_led = led_on              # Turns on and off the little LED next to USB on
 
     # loop to the beginning!
