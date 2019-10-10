@@ -77,7 +77,7 @@ while True:
             cpx.pixels.brightness = 0.3
 
 #SWITCH
-    # Check the switch 
+    # Check the switch
     if cpx.switch:
         if last_switch != cpx.switch: # if it moved, print it out
             print("Switch moved left")
@@ -90,7 +90,7 @@ while True:
 #CAPACITIVE TOUCH
 #Touch A1 - A7 on the device to play music
     if TOUCH_PIANO:
-        if cpx.touch_A4:              
+        if cpx.touch_A4:
             cpx.play_tone(524, .25)
         elif cpx.touch_A5:
             cpx.play_tone(588, .25)
